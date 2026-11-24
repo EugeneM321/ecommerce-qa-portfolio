@@ -12,4 +12,18 @@ All demo code, data, requirements, test cases, and automation will be created sp
 - [Risk and release gate](docs/risk-and-release-gate.md) — release blockers and the EC-R03 evidence chain
 - [Change-impact note](docs/change-impact.md) — how coverage changes if payment confirmation becomes asynchronous
 
-**Status:** Step 1 planning complete. Implementation and test execution are planned.
+**Status:** Step 2 storefront and simulator implemented. The formal manual run and automated test suites are planned.
+
+## Run locally
+
+Use Node.js 24 and run `node demo/server.mjs` from the repository root. Open <http://127.0.0.1:3000/>. There are no install steps or external services. **Reset demo** restores the three products and their starting stock, clears the shared demo cart, and deletes synthetic attempts and orders.
+
+The demo uses one local guest cart. The default SQLite file is `.local/store.sqlite` (ignored by Git). Set `DEMO_DB` to use a separate file and `PORT` to change the local port. Monetary values are stored and returned by the JSON API in integer USD cents.
+
+| Local endpoint | Purpose |
+| --- | --- |
+| `GET /api/products`, `GET /api/products/:sku` | Read catalog, price, and stock |
+| `GET /api/cart`, `PUT /api/cart` | Read cart totals or set a SKU quantity. Send `{"sku":"harbor","quantity":2}` and use zero to remove it. |
+| `POST /api/checkout` | Submit a simulator outcome such as `{"outcome":"interrupted"}`. Other values are `approved`, `declined`, and `canceled`. |
+| `GET /api/checkout/:id`, `POST /api/checkout/:id/retry` | Read an attempt or recover the original paid order after interrupted confirmation |
+| `POST /api/reset` | Restore the synthetic fixtures |
