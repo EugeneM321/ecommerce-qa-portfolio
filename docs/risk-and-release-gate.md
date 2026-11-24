@@ -12,7 +12,7 @@ Block release when a listed risk is reproduced or when its required evidence is 
 
 ## Flagship traceability
 
-**EC-R03 → M11 → A04 → UI-04 → SQL-01 → planned CI evidence**
+**EC-R03 → M11 → A04 → UI-04 → SQL-01 → CI evidence**
 
 | Link | Evidence |
 | --- | --- |
@@ -21,4 +21,4 @@ Block release when a listed risk is reproduced or when its required evidence is 
 | A04 — API behavior | The [local suite](../tests/api-sql.test.mjs) checks the unconfirmed response, retries the original attempt twice, and independently reads back the same paid order and stock from the API. |
 | UI-04 — Playwright browser behavior | The [checkout spec](../tests/ui/checkout.spec.ts) checks the visible interruption, recovery of the original attempt, and the same $29 paid order reference on revisit and reload. |
 | SQL-01 — SQLite persistence | A separate read-only connection verifies one paid order tied to the original attempt, a $29 total, and two Harbor Soap Dishes. Stock moves from 5 to 3 at acceptance and stays 3 after both retries. |
-| Planned CI evidence | Link the future automated run and durable evidence showing the requirement, scenario, and outcome. Retain relevant failure evidence when available. |
+| CI evidence | The [passing verification run](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/runs/45473624160) records A04 and SQL-01 in the API/SQL job step and UI-04 in the Playwright step. See the [main branch runs](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/workflows/qa.yml?query=branch%3Amain) for ongoing results. |

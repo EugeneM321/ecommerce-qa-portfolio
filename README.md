@@ -12,7 +12,7 @@ All demo code, data, requirements, test cases, and automation will be created sp
 - [Risk and release gate](docs/risk-and-release-gate.md) — release blockers and the EC-R03 evidence chain
 - [Change-impact note](docs/change-impact.md) — how coverage changes if payment confirmation becomes asynchronous
 
-**Status:** [Manual release gate passed](docs/test-runs/2026-11-24-v1.md) with 14 Pass, 0 Fail, 0 Blocked. Four API/SQL scenarios and four Playwright browser tests pass locally. CI is planned.
+**Status:** [Manual release gate passed](docs/test-runs/2026-11-24-v1.md) with 14 Pass, 0 Fail, 0 Blocked. Four API/SQL scenarios and four Playwright browser tests pass locally and in [GitHub Actions](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/workflows/qa.yml?query=branch%3Amain).
 
 ## Run locally
 
