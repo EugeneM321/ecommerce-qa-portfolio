@@ -92,6 +92,7 @@ test('UI-04 — EC-R03/M11/A04/SQL-01 recover the same interrupted checkout', as
   const retry = page.getByRole('button', { name: 'Retry confirmation', exact: true })
   await expect(retry).toBeVisible()
   await retry.click()
+  await expect(page.getByText('Total paid: $28.00 USD', { exact: true })).toBeVisible()
   const reference = await paidOrderReference(page)
   await expect(page).toHaveURL(attemptUrl)
   await expect(page.getByText(`Checkout attempt: ${attempt}`, { exact: true })).toBeVisible()
