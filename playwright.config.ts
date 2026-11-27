@@ -2,7 +2,9 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/ui',
-  reporter: 'list',
+  reporter: process.env.QA_REPORT_DIR
+    ? [['list'], ['junit', { outputFile: process.env.QA_REPORT_DIR + '/playwright.xml' }]]
+    : 'list',
   use: {
     browserName: 'chromium',
     headless: true,

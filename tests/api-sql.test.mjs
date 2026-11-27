@@ -57,6 +57,7 @@ async function request(method, path, status, data) {
     options.body = JSON.stringify(data)
   }
   const response = await fetch(`${baseUrl}/api${path}`, options)
+  assert.match(response.headers.get('content-type'), /^application\/json\b/)
   const body = await response.text()
   assert.equal(response.status, status, `${method} ${path}: ${body}`)
   return JSON.parse(body)
@@ -157,4 +158,43 @@ test('A04 / SQL-01 — EC-R03 and M11 recover the same paid order after interrup
     assert.deepEqual(paidOrders(), originalOrders, `SQL-01 preserves the single original order after ${label}`)
     assert.equal(persistedStock(), 3, `SQL-01 preserves stock after ${label}`)
   }
+})
+
+
+test('A05 — exact stock is accepted and a multi-SKU order adds shipping once', async () => {
+  const [harbor, meadow] = fixture
+  assert.deepEqual(await setQuantity(harbor.stock), expectedCart(harbor.stock))
+  const expected = {
+    currency: 'USD',
+    items: [{ ...harbor, quantity: 5 }, { ...meadow, quantity: 2 }],
+    subtotal: 9600, shipping: 500, total: 10100,
+  }
+  assert.deepEqual(await request('PUT', '/cart', 200, { sku: meadow.sku, quantity: 2 }), expected)
+  assert.deepEqual(await request('GET', '/cart', 200), expected)
+  const approved = await request('POST', '/checkout', 201, { outcome: 'approved' })
+  assert.equal(approved.order.total, expected.total)
+  assert.equal(persistedStock(), 0)
+  assert.equal((await request('GET', '/products/meadow', 200)).stock, 1)
+})
+
+test('A06 — malformed requests and invalid recovery leave persisted state intact', async () => {
+  await setQuantity(2)
+  for (const body of ['{', '[]']) {
+    const response = await fetch(baseUrl + '/api/checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body,
+      signal: AbortSignal.timeout(5000),
+    })
+    assert.equal(response.status, 400)
+    assert.match(response.headers.get('content-type'), /^application\/json\b/)
+    assert.deepEqual(await response.json(), { error: 'Send a JSON object.' })
+  }
+  assert.deepEqual(await request('GET', '/checkout/999', 404), { error: 'Checkout attempt not found.' })
+  assert.deepEqual(await request('POST', '/checkout/999/retry', 404), { error: 'Checkout attempt not found.' })
+  const declined = await request('POST', '/checkout', 201, { outcome: 'declined' })
+  assert.deepEqual(await request('POST', '/checkout/' + declined.id + '/retry', 409),
+    { error: 'Only accepted attempts can be recovered.' })
+  assert.deepEqual(await request('GET', '/checkout/' + declined.id, 200), declined)
+  assert.deepEqual(await request('GET', '/cart', 200), expectedCart(2))
+  assert.deepEqual(paidOrders(), [])
+  assert.equal(persistedStock(), 5)
 })
