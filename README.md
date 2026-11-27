@@ -12,7 +12,7 @@ An independent e-commerce QA case study using synthetic data. The release questi
 | --- | --- |
 | Manual | 14 Pass, 0 Fail, 0 Blocked |
 | Release decision | PASS / READY FOR RELEASE |
-| API + SQLite | 4 passed, 0 failed |
+| API + SQLite | 7 passed locally. The previous main CI run verified 4 tests. |
 | Playwright | 4 passed, 0 failed |
 | CI | Passing on `main` |
 
@@ -20,10 +20,12 @@ An independent e-commerce QA case study using synthetic data. The release questi
 
 Use Node.js 24 from the repository root.
 
-**API and SQLite checks** (starts its own demo).
+**API and SQLite checks** (start isolated demo instances).
+
+The recovery suite holds two HTTP retry handlers at a test-only barrier, checks that the original checkout remains unconfirmed, then releases both. A read-only SQLite connection verifies the original paid order, line items, and one inventory deduction. UI-04 refreshes the unconfirmed page and recovers via the keyboard.
 
 ```sh
-node --test tests/api-sql.test.mjs
+node --test tests/*.test.mjs
 ```
 
 **Playwright browser tests** (starts its own demo).
@@ -46,13 +48,15 @@ Open <http://127.0.0.1:3000/>. Add two Harbor Soap Dishes and choose **Interrupt
 
 The suites use disposable SQLite state. Playwright resets the cart and inventory before each case and saves failure screenshots and traces under `test-results/`.
 
+The pull-request and main-branch workflow generates JUnit results and a job summary. Playwright retains traces and screenshots on failure.
+
 ## Quick Review
 
 | Time | Evidence |
 | --- | --- |
 | 1 minute | [Test strategy](docs/test-strategy.md), [14 manual cases](docs/manual-test-cases.md), and [completed manual run and release decision](docs/test-runs/2026-11-24-v1.md) |
 | 1 minute | [Release gate and EC-R03 traceability](docs/risk-and-release-gate.md#flagship-traceability) and the [change-impact note](docs/change-impact.md) on asynchronous confirmation |
-| 1 minute | [API + SQLite suite](tests/api-sql.test.mjs) and [Playwright UI-04](tests/ui/checkout.spec.ts#L79). Follow A04, SQL-01, and UI-04 to see how the same retry risk is verified at each layer. |
+| 1 minute | [API + SQLite suite](tests/api-sql.test.mjs) and [Playwright UI-04](tests/ui/checkout.spec.ts#L79). Follow A04/SQL-01, [A07/SQL-02](tests/overlapping-recovery.test.mjs), and UI-04 to see sequential retries, overlapping HTTP requests, and keyboard recovery. |
 | 1 minute | [GitHub Actions workflow](.github/workflows/qa.yml) and the [failure investigation](docs/failure-investigation.md), with a Playwright screenshot and passing retest |
 
 ## Project boundaries

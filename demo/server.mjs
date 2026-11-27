@@ -38,7 +38,7 @@ function attemptId(raw) {
   return id
 }
 
-async function api(request, response, path) {
+async function api(request, response, path, beforeRecovery) {
   const { method } = request
   const productPath = /^\/products\/([a-z]+)$/.exec(path)
   const checkoutPath = /^\/checkout\/(\d+)(\/retry)?$/.exec(path)
@@ -58,7 +58,10 @@ async function api(request, response, path) {
   if (checkoutPath) {
     const id = attemptId(checkoutPath[1])
     if (method === 'GET' && !checkoutPath[2]) return json(response, 200, store.attempt(id))
-    if (method === 'POST' && checkoutPath[2]) return json(response, 200, store.retry(id))
+    if (method === 'POST' && checkoutPath[2]) {
+      if (beforeRecovery) await beforeRecovery(id)
+      return json(response, 200, store.retry(id))
+    }
   }
   if (method === 'POST' && path === '/reset') {
     store.reset()
@@ -118,22 +121,27 @@ async function storefront(request, response, path) {
   throw new store.DemoError('Page not found.', 404)
 }
 
-const server = createServer(async (request, response) => {
-  const path = request.url.split('?')[0]
-  const isApi = path.startsWith('/api/')
-  try {
-    if (isApi) await api(request, response, path.slice(4))
-    else await storefront(request, response, path)
-  } catch (error) {
-    const known = error instanceof store.DemoError
-    if (!known) console.error(error)
-    const status = known ? error.status : 500
-    const message = known ? error.message : 'Unexpected demo error.'
-    if (isApi) json(response, status, { error: message })
-    else send(response, status, view.page('Request could not be completed', '<p><a href="/cart">Open cart</a></p>', message))
-  }
-})
+export function createStorefrontServer({ beforeRecovery } = {}) {
+  return createServer(async (request, response) => {
+    const path = request.url.split('?')[0]
+    const isApi = path.startsWith('/api/')
+    try {
+      if (isApi) await api(request, response, path.slice(4), beforeRecovery)
+      else await storefront(request, response, path)
+    } catch (error) {
+      const known = error instanceof store.DemoError
+      if (!known) console.error(error)
+      const status = known ? error.status : 500
+      const message = known ? error.message : 'Unexpected demo error.'
+      if (isApi) json(response, status, { error: message })
+      else send(response, status, view.page('Request could not be completed', '<p><a href="/cart">Open cart</a></p>', message))
+    }
+  })
+}
 
-server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {
-  console.log(`Storefront running at http://127.0.0.1:${server.address().port}/`)
-})
+if (import.meta.main) {
+  const server = createStorefrontServer()
+  server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {
+    console.log(`Storefront running at http://127.0.0.1:${server.address().port}/`)
+  })
+}

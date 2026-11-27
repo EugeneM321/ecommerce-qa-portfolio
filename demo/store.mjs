@@ -147,3 +147,7 @@ export function retry(id) {
     return attempt(id)
   })
 }
+
+export function closeStore() {
+  db.close()
+}
