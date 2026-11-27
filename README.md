@@ -2,9 +2,9 @@
 
 [![E-commerce QA CI](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/workflows/qa.yml/badge.svg?branch=main)](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/workflows/qa.yml?query=branch%3Amain)
 
-An independent e-commerce QA case study using synthetic data. The release question is whether a shopper can recover an interrupted payment confirmation without creating a second order or deducting inventory twice. The risks are informed by my sole-QA e-commerce experience.
+A flagship SDET case study about interrupted checkout. If payment is accepted but confirmation is interrupted, retrying the same attempt must return the original paid order without deducting inventory twice. The case study uses a synthetic storefront and payment simulator. Its risks draw on my sole-QA e-commerce experience.
 
-**Flagship evidence:** Retrying the interrupted checkout returned the original paid order. The API and read-only SQLite checks confirmed one paid order and a single stock deduction from 5 to 3.
+**How it is verified:** Playwright with TypeScript checks recovery in the browser. REST API tests hold two requests at the recovery handler before releasing either one. Both return the original order. An independent, read-only SQLite query confirms one paid order and stock moving from 5 to 3 once. This is transaction-level idempotency evidence for the demo.
 
 ## Verified results
 
@@ -12,9 +12,9 @@ An independent e-commerce QA case study using synthetic data. The release questi
 | --- | --- |
 | Manual | 14 Pass, 0 Fail, 0 Blocked |
 | Release decision | PASS / READY FOR RELEASE |
-| API + SQLite | 7 passed locally. The previous main CI run verified 4 tests. |
+| API + SQLite | 7 passed, 0 failed |
 | Playwright | 4 passed, 0 failed |
-| CI | Passing on `main` |
+| CI | [Passing Ubuntu run on `main`](https://github.com/EugeneM321/ecommerce-qa-portfolio/actions/runs/46077689281) · JUnit reports |
 
 ## Quick start
 
@@ -52,12 +52,13 @@ The pull-request and main-branch workflow generates JUnit results and a job summ
 
 ## Quick Review
 
-| Time | Evidence |
+| Start with | What to look for |
 | --- | --- |
-| 1 minute | [Test strategy](docs/test-strategy.md), [14 manual cases](docs/manual-test-cases.md), and [completed manual run and release decision](docs/test-runs/2026-11-24-v1.md) |
-| 1 minute | [Release gate and EC-R03 traceability](docs/risk-and-release-gate.md#flagship-traceability) and the [change-impact note](docs/change-impact.md) on asynchronous confirmation |
-| 1 minute | [API + SQLite suite](tests/api-sql.test.mjs) and [Playwright UI-04](tests/ui/checkout.spec.ts#L79). Follow A04/SQL-01, [A07/SQL-02](tests/overlapping-recovery.test.mjs), and UI-04 to see sequential retries, overlapping HTTP requests, and keyboard recovery. |
-| 1 minute | [GitHub Actions workflow](.github/workflows/qa.yml) and the [failure investigation](docs/failure-investigation.md), with a Playwright screenshot and passing retest |
+| [Overlapping retry and SQL-02](tests/overlapping-recovery.test.mjs) · [API/SQLite suite](tests/api-sql.test.mjs) | Two HTTP handlers reach the barrier before either proceeds. The original attempt, order contents, and stock are verified independently. |
+| [Playwright UI-04](tests/ui/checkout.spec.ts#L79) · [GitHub Actions workflow](.github/workflows/qa.yml) | Refresh while payment is still unconfirmed, recover by keyboard, and verify the original paid reference. CI publishes JUnit and retains browser diagnostics on failure. |
+| [Release gate and traceability](docs/risk-and-release-gate.md#flagship-traceability) · [Change-impact note](docs/change-impact.md) | Follow the checkout risk from requirement through manual, API, browser, and SQL evidence. |
+| [Strategy](docs/test-strategy.md) · [14 manual cases](docs/manual-test-cases.md) · [Manual run and release decision](docs/test-runs/2026-11-24-v1.md) · [Controlled failure and retest](docs/failure-investigation.md) | Review the original release decision and the documented Playwright assertion failure, screenshot, and passing retest. |
+
 
 ## Project boundaries
 
